@@ -168,7 +168,7 @@ async def main():
             print("Processing complete")
         
         with st.spinner("Generating final output..."):
-            if st.session_state.qna_content is not None:
+            if st.session_state.qna_content is not None and st.session.semaphore != 1:
                 markdown_text = await generate_final_output(
                     st.session_state.qna_content,
                     st.session_state.llm
