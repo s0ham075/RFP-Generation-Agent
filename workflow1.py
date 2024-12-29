@@ -257,16 +257,8 @@ class RFPWorkflow(Workflow):
         ) as f:
             f.write(combined_answers)
 
-        return CheckCollectedAnswersEvent(combined_answers=combined_answers)
+        return CollectedAnswersEvent(combined_answers=combined_answers)
     
-    @step
-    async def check_collected_answers(self, ctx: Context, ev: CheckCollectedAnswersEvent) -> InputRequiredEvent:
-        g_output_template = await ctx.get("output_template")
-        return InputRequiredEvent(prefix=ev.combined_answers)
-    
-    @step
-    async def human_response(self, ctx: Context, ev: HumanResponseEvent) -> CollectedAnswersEvent:
-        return CollectedAnswersEvent(combined_answers=ev.response)
     
     @step
     async def generate_output(
@@ -296,23 +288,3 @@ class RFPWorkflow(Workflow):
         return StopEvent(result=final_output)
 
 
-async def generate_final_output(qna:str, llm):
-        print("Step: Generate Final Output")
-       
-        output_template = g_output_template
-        gprompt = PromptTemplate(GENERATE_OUTPUT_PROMPT)
-        output_template = "\n".join(
-            [doc.get_content("none") for doc in output_template]
-        )
-
-        resp = await llm.astream(
-            gprompt,
-            output_template=output_template,
-            answers=qna,
-        )
-
-        final_output = ""
-        async for r in resp:
-            final_output += r
-
-        return final_output

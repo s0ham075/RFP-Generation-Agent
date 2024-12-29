@@ -19,14 +19,13 @@ import asyncio
 
 load_dotenv()
 
-async def handle_qna_submission(handler, qna_df):
-    # Store edited Q&A persistently in session state
-    st.session_state.qna_content = qna_df.to_dict('records')
+def handle_qna_submission(handler, qna_df):
     final_qna = "\n\n".join(
         f"Q: {row['question']}\nA: {row['answer']}" for _, row in qna_df.iterrows()
     )
-    response = await generate_final_output(final_qna,st.session_state.llm)
-    st.session_state.final_output = response
+    if not "qna_content" in st.session_state:
+        st.session_state.qna_content =final_qna
+    st.write("okokokokokoko")
 
 # Configuration for the RFP Workflow
 async def setup_rfp_workflow():
@@ -89,25 +88,6 @@ async def process_rfp_file(uploaded_file, workflow_components):
         qna_content = []
         async for event in handler.stream_events():
             print(f"Event received type: {type(event)}")
-            if isinstance(event, InputRequiredEvent):
-                # Adding Q&A Editor Section
-                st.subheader("Edit Extracted Q&A Content")
-                st.session_state["semaphore"]= 1
-                qna_df = pd.DataFrame(qna_content)
-                edited_qna_df = st.data_editor(qna_df, num_rows="dynamic", use_container_width=True)
-                # Process Q&A edits
-                # if st.button("Submit",key="human_input"):
-                #     st.write("okokokokokoko")
-                #     final_qna = "\n\n".join(f"Q: {row['question']}\nA: {row['answer']}" for _, row in st.session_state["edited_qna_df"].iterrows())
-                #     handler.ctx.send_event(HumanResponseEvent(response=final_qna))
-
-                st.button(
-                    label="Submit",
-                    key="human_input",
-                    on_click=handle_qna_submission,
-                    args=(handler, edited_qna_df)
-                )
-                
             if hasattr(event, "delta") and hasattr(event, "msg"):  # Replace with the actual attributes of the event
                 if event.delta:
                     status_text.text_area(
@@ -181,7 +161,12 @@ async def main():
                         st.session_state.workflow_components
                     )
                 print("Processing complete")
-            markdown_text = st.session_state.final_output
+            
+            markdown_text = ""
+            with st.spinner("Generating final output..."):
+                if st.session_state.qna_content is not None:
+                    markdown_text = await generate_final_output(st.session_state.qna_content,st.session_state.llm)
+            
             # Toggle editor and renderer
             if 'show_editor' not in st.session_state:
                 st.session_state.show_editor = False
