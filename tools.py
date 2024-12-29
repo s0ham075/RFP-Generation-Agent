@@ -19,12 +19,6 @@ from typing import List
 from llama_index.core.schema import NodeWithScore
 from typing import Optional
 load_dotenv()
-# api_endpoint = "https://eef12881-687b-44e6-80ab-75d09b40338d-us-east-2.apps.astra.datastax.com"
-# token = "AstraCS:JKzdpnyarsePNAopwJgOWMyC:703b964d04605e8871fa1b73ab0d531ca7eef918cd1e3447c851ac6c8f32bd3d"
-# collection_name = "kb_aiplanet"
-# embedding_dimension = 768
-# collection_description = "A sample collection containing RFP-related data."
-
 api_endpoint = os.getenv("ASTRA_DB_API_ENDPOINT")
 token = os.getenv("ASTRA_DB_TOKEN")
 collection_name = os.getenv("ASTRA_DB_COLLECTION_NAME")

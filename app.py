@@ -91,17 +91,16 @@ async def process_rfp_file(uploaded_file, workflow_components):
         async for event in handler.stream_events():
             print(f"Event received type: {type(event)}")
             if isinstance(event, InputRequiredEvent):
-                st.subheader("Edit Extracted Q&A Content")
-                st.session_state.semaphore = 1
-                qna_df = pd.DataFrame(qna_content)
-                edited_qna_df = st.data_editor(qna_df, num_rows="dynamic", use_container_width=True)
-                
-                st.button(
-                    label="Submit",
-                    key="human_input",
-                    on_click=handle_qna_submission,
-                    args=(handler, edited_qna_df)
-                )
+                with st.form("my_form"):
+                    st.subheader("Edit Extracted Q&A Content")
+                    st.session_state.semaphore = 1
+                    qna_df = pd.DataFrame(qna_content)
+                    edited_qna_df = st.data_editor(qna_df, num_rows="dynamic", use_container_width=True)
+                    submit = st.form_submit_button(
+                        label="Submit",
+                        on_click=handle_qna_submission,
+                        args=(handler, edited_qna_df)
+                    )
                 
             if hasattr(event, "delta") and hasattr(event, "msg"):
                 if event.delta:
