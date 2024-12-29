@@ -1,0 +1,10 @@
+reportlab
+markdown
+streamlit 
+streamlit_ace
+llama_index
+llama-index-vector-stores-astra-db
+llama-index-embeddings-huggingface
+llama-index-llms-azure-openai
+PyPDF2
+python-dotenv
