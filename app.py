@@ -28,6 +28,8 @@ def initialize_session_state():
         st.session_state.workflow_components = None
     if 'show_editor' not in st.session_state:
         st.session_state.show_editor = False
+    if 'markdown_text' not in st.session_state:
+        st.session_state.markdown_text = None
 
 def handle_qna_submission(handler, qna_df):
     """Handle the submission of Q&A content"""
@@ -145,12 +147,13 @@ def convert_markdown_to_pdf(markdown_text):
 
 async def main():
     initialize_session_state()
+    markdown_text= ""
     
     print("Initializing Streamlit application")
     st.set_page_config(layout="wide")
     st.title("RFP Response Generator")
 
-    if st.session_state.workflow_components is None and st.session_state.semaphore != 1:
+    if st.session_state.workflow_components is None and st.session_state.semaphore == 0:
         st.session_state.workflow_components = await setup_rfp_workflow()
 
     with st.sidebar:
@@ -160,7 +163,7 @@ async def main():
     if uploaded_file is not None and st.session_state.workflow_components is not None:
         print("File uploaded, starting processing")
         with st.spinner("Processing RFP..."):
-            if st.session_state.semaphore != 1:
+            if st.session_state.semaphore == 0:
                 markdown_text, qna_content = await process_rfp_file(
                     uploaded_file, 
                     st.session_state.workflow_components
@@ -168,11 +171,13 @@ async def main():
             print("Processing complete")
         
         with st.spinner("Generating final output..."):
-            if st.session_state.qna_content is not None and st.session_state.semaphore != 1:
+            if st.session_state.qna_content is not None and st.session_state.semaphore == 1:
                 markdown_text = await generate_final_output(
                     st.session_state.qna_content,
                     st.session_state.llm
                 )
+                st.session_state.markdown_text = markdown_text
+                st.session_state.semaphore =2 
         
         if st.button("Toggle Editor/Renderer"):
             st.session_state.show_editor = not st.session_state.show_editor
@@ -180,7 +185,7 @@ async def main():
         if st.session_state.show_editor:
             st.subheader("Edit Response Content")
             edited_markdown_text = st_ace.st_ace(
-                value=markdown_text,
+                value=st.session_state.markdown_text,
                 language='markdown',
                 theme='monokai',
                 key='markdown_editor',
@@ -188,14 +193,14 @@ async def main():
             print("Markdown editor loaded")
         else:
             st.subheader("Rendered Response Content")
-            st.markdown(markdown_text, unsafe_allow_html=True)
+            st.markdown(st.session_state.markdown_text, unsafe_allow_html=True)
             print("Markdown rendered in UI")
 
         col1, col2 = st.columns(2)
         with col1:
             st.download_button(
                 label="Download Markdown",
-                data=markdown_text,
+                data=st.session_state.markdown_text,
                 file_name="rfp_response.md",
                 mime="text/markdown"
             )
